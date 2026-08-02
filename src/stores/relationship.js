@@ -56,13 +56,14 @@ export const useRelationshipStore = defineStore('relationship', () => {
       return { ok: false, error: '不能给自己发送关系请求', user: null }
     }
 
-    // 2. 检查用户是否存在
-    let user
+    // 2. 检查用户是否存在（getUserProfile 返回 UserDTO）
+    let dto
     try {
-      user = await api.getUserProfile(targetUserId)
+      dto = await api.getUserProfile(targetUserId)
     } catch {
       return { ok: false, error: '该用户不存在，请检查ID是否正确', user: null }
     }
+    const user = dto?.user || dto
 
     // 3. 检查对方是否已有关系
     try {

@@ -5,6 +5,7 @@ import { connect as wsConnect, disconnect as wsDisconnect } from '../services/we
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
+  const location = ref(JSON.parse(localStorage.getItem('location') || 'null'))
   const token = ref(localStorage.getItem('token') || '')
 
   const isLoggedIn = () => !!token.value
@@ -30,9 +31,18 @@ export const useAuthStore = defineStore('auth', () => {
   async function restoreSession() {
     if (!token.value) return false
     try {
-      const u = await getMyProfile()
-      user.value = u
-      localStorage.setItem('user', JSON.stringify(u))
+      const dto = await getMyProfile()
+      // UserDTO: { user: {...}, location: {...} }
+      if (dto?.user) {
+        user.value = dto.user
+        location.value = dto.location || null
+      } else {
+        // 兼容旧格式（扁平 User）
+        user.value = dto
+        location.value = null
+      }
+      localStorage.setItem('user', JSON.stringify(user.value))
+      if (location.value) localStorage.setItem('location', JSON.stringify(location.value))
       wsConnect()
       return true
     } catch {
@@ -42,17 +52,26 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function updateUser(updated) {
-    user.value = updated
-    localStorage.setItem('user', JSON.stringify(updated))
+    // 后端可能返回 UserDTO 或扁平 User
+    if (updated?.user) {
+      user.value = updated.user
+      location.value = updated.location || null
+    } else {
+      user.value = updated
+    }
+    localStorage.setItem('user', JSON.stringify(user.value))
+    if (location.value) localStorage.setItem('location', JSON.stringify(location.value))
   }
 
   function logout() {
     token.value = ''
     user.value = null
+    location.value = null
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    localStorage.removeItem('location')
     wsDisconnect()
   }
 
-  return { user, token, isLoggedIn, login, register, restoreSession, updateUser, logout }
+  return { user, location, token, isLoggedIn, login, register, restoreSession, updateUser, logout }
 })

@@ -1,6 +1,8 @@
 <template>
   <div class="page">
-    <div class="page-header"><h1>💕 好感度</h1></div>
+    <div class="page-header">
+      <h1>💕 好感度</h1>
+    </div>
 
     <LoadingSpinner v-if="store.loading" message="加载中..." />
 
@@ -25,7 +27,8 @@
           <span>管理</span>
         </div>
       </div>
-      <button class="btn btn-outline btn-sm mt-3" style="color:var(--error);border-color:var(--error)" @click="showDeleteDialog = true">
+      <button class="btn btn-outline btn-sm mt-3" style="color:var(--error);border-color:var(--error)"
+        @click="showDeleteDialog = true">
         解除关系
       </button>
     </div>
@@ -34,19 +37,11 @@
     <div v-else class="page-body">
       <!-- Tab 切换 -->
       <div class="tab-bar">
-        <div
-          class="tab-item"
-          :class="{ active: activeTab === 'received' }"
-          @click="activeTab = 'received'"
-        >
+        <div class="tab-item" :class="{ active: activeTab === 'received' }" @click="switchTab('received')">
           收到的请求
           <span v-if="store.receivedRequests.length" class="tab-badge">{{ store.receivedRequests.length }}</span>
         </div>
-        <div
-          class="tab-item"
-          :class="{ active: activeTab === 'sent' }"
-          @click="activeTab = 'sent'"
-        >
+        <div class="tab-item" :class="{ active: activeTab === 'sent' }" @click="switchTab('sent')">
           发出的请求
           <span v-if="store.sentRequests.length" class="tab-badge">{{ store.sentRequests.length }}</span>
         </div>
@@ -54,13 +49,7 @@
 
       <!-- 收到的请求 -->
       <div v-if="activeTab === 'received'">
-        <EmptyState
-          v-if="store.receivedRequests.length === 0"
-          icon="📥"
-          message="暂无收到的关系请求"
-          action-label="发起关系"
-          @action="openCreateDialog"
-        />
+        <EmptyState v-if="store.receivedRequests.length === 0" icon="📥" message="暂无收到的关系请求" />
         <div v-else>
           <div v-for="req in store.receivedRequests" :key="req.id" class="card request-card fade-in">
             <div class="flex gap-2">
@@ -71,7 +60,8 @@
               </div>
             </div>
             <div class="flex gap-1 mt-2" style="justify-content:flex-end">
-              <button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error)" @click="handleReject(req)">
+              <button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error)"
+                @click="handleReject(req)">
                 {{ rejecting === req.id ? '...' : '拒绝' }}
               </button>
               <button class="btn btn-primary btn-sm" @click="handleConfirm(req)" :disabled="confirming === req.id">
@@ -84,13 +74,7 @@
 
       <!-- 发出的请求 -->
       <div v-if="activeTab === 'sent'">
-        <EmptyState
-          v-if="store.sentRequests.length === 0"
-          icon="📤"
-          message="暂无发出的关系请求"
-          action-label="发起关系"
-          @action="openCreateDialog"
-        />
+        <EmptyState v-if="store.sentRequests.length === 0" icon="📤" message="暂无发出的关系请求" />
         <div v-else>
           <div v-for="req in store.sentRequests" :key="req.id" class="card request-card fade-in">
             <div class="flex gap-2">
@@ -125,18 +109,13 @@
         </p>
 
         <!-- 输入手机号或ID -->
-        <input
-          v-model="targetInput"
-          class="form-input mt-2"
-          placeholder="输入手机号或用户ID"
-          :disabled="validating || creating"
-          @keyup.enter="lookupUser"
-        />
+        <input v-model="targetInput" class="form-input mt-2" placeholder="输入手机号或用户ID" :disabled="validating || creating"
+          @keyup.enter="lookupUser" />
         <div v-if="lookupError" class="form-error mt-1">{{ lookupError }}</div>
 
         <!-- 查找到的用户信息 -->
         <div v-if="lookupUser" class="found-user card mt-2 flex gap-2 fade-in">
-          <UserAvatar :src="foundUser.avatarUrl" :name="foundUser.nickname" :size="48" />
+          <UserAvatar :src="foundUser?.avatarUrl" :name="foundUser?.nickname" :size="48" />
           <div style="flex:1">
             <div class="flex-between">
               <b>{{ foundUser.nickname }}</b>
@@ -153,11 +132,8 @@
         <div class="flex gap-1 mt-2" style="justify-content:flex-end">
           <button class="btn btn-sm" @click="showCreateDialog = false">取消</button>
           <button class="btn btn-sm" style="color:var(--primary)" @click="openScanner">📷 扫码</button>
-          <button
-            class="btn btn-primary btn-sm"
-            :disabled="creating || validating || !canSend"
-            @click="doCreateRelationship"
-          >
+          <button class="btn btn-primary btn-sm" :disabled="creating || validating || !canSend"
+            @click="doCreateRelationship">
             {{ creating ? '发送中...' : validating ? '校验中...' : '发送请求' }}
           </button>
         </div>
@@ -218,6 +194,11 @@ const auth = useAuthStore()
 
 const activeTab = ref('received') // 默认显示收到的请求
 const showCreateDialog = ref(false)
+
+function switchTab(tab) {
+  activeTab.value = tab
+}
+
 const showDeleteDialog = ref(false)
 const showScanner = ref(false)
 
@@ -267,17 +248,17 @@ async function lookupUser() {
   foundUser.value = null
 
   try {
-    let user = null
+    let dto = null
 
     // 11 位纯数字 → 按手机号查找
     if (/^\d{11}$/.test(input)) {
       try {
-        user = await api.searchUserByPhone(input)
+        dto = await api.searchUserByPhone(input)
       } catch {
         // 手机号没找到，再尝试当 ID 查
         const id = Number(input)
         if (!isNaN(id) && id > 0) {
-          user = await api.getUserProfile(id)
+          dto = await api.getUserProfile(id)
         }
       }
     } else {
@@ -287,9 +268,11 @@ async function lookupUser() {
         lookupError.value = '请输入有效的手机号（11位）或用户ID'
         return
       }
-      user = await api.getUserProfile(id)
+      dto = await api.getUserProfile(id)
     }
 
+    // UserDTO: { user: {...}, location: {...} } 或扁平 User
+    const user = dto?.user || dto
     if (!user) {
       lookupError.value = '未找到该用户'
       return
@@ -396,17 +379,17 @@ async function openScanner() {
           const data = JSON.parse(decoded)
           if (data.id) {
             scanResult.value = { id: data.id, nickname: data.nickname || '', phone: data.phone || '' }
-            html5QrCode?.stop().catch(() => {})
+            html5QrCode?.stop().catch(() => { })
           }
         } catch {
           const id = Number(decoded)
           if (!isNaN(id) && id > 0) {
             scanResult.value = { id, nickname: `用户${id}`, phone: '' }
-            html5QrCode?.stop().catch(() => {})
+            html5QrCode?.stop().catch(() => { })
           }
         }
       },
-      () => {}
+      () => { }
     )
   } catch {
     scanError.value = '无法启动相机，请检查权限，或手动输入ID'
@@ -414,7 +397,7 @@ async function openScanner() {
 }
 
 function closeScanner() {
-  if (html5QrCode) { html5QrCode.stop().catch(() => {}); html5QrCode = null }
+  if (html5QrCode) { html5QrCode.stop().catch(() => { }); html5QrCode = null }
   showScanner.value = false
   scanResult.value = null
   scanError.value = ''
@@ -429,21 +412,115 @@ function useScanResult() {
 </script>
 
 <style scoped>
-.action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.action-item { text-align: center; cursor: pointer; font-size: 13px; }
-.action-icon { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 6px; }
-.bg-success { background: #E8F8F5; }
-.bg-error { background: #FDEDEC; }
-.bg-warning { background: #FEF9E7; }
-.bg-muted { background: #F2F3F4; }
-.tab-bar { display: flex; gap: 0; margin-bottom: 16px; background: var(--surface); border-radius: var(--radius); overflow: hidden; }
-.tab-item { flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 500; cursor: pointer; position: relative; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s; }
-.tab-item.active { color: var(--primary); border-bottom-color: var(--primary); }
-.tab-badge { background: var(--error); color: #fff; border-radius: 10px; padding: 0 6px; font-size: 11px; margin-left: 4px; }
-.request-card { animation: fadeIn 0.3s ease; }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
-.modal-card { background: var(--surface); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 360px; max-height: 85vh; overflow-y: auto; }
-.modal-card h3 { font-size: 18px; }
-.found-user { padding: 14px; }
-.scanner-modal { max-width: 400px; }
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.action-item {
+  text-align: center;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.action-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin: 0 auto 6px;
+}
+
+.bg-success {
+  background: #E8F8F5;
+}
+
+.bg-error {
+  background: #FDEDEC;
+}
+
+.bg-warning {
+  background: #FEF9E7;
+}
+
+.bg-muted {
+  background: #F2F3F4;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.tab-item {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-item.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.tab-badge {
+  background: var(--error);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.request-card {
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.modal-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 100%;
+  max-width: 360px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-card h3 {
+  font-size: 18px;
+}
+
+.found-user {
+  padding: 14px;
+}
+
+.scanner-modal {
+  max-width: 400px;
+}
 </style>
