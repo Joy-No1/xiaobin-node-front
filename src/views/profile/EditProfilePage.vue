@@ -12,7 +12,7 @@
       <div class="avatar-upload" @click="triggerUpload">
         <UserAvatar :src="avatarPreview || auth.user.avatarUrl" :name="form.nickname || auth.user.nickname" :size="72" />
         <div class="avatar-overlay">
-          <span v-if="!uploading">📷 更换头像</span>
+          <span v-if="!uploading"><Camera :size="14" class="inline-icon" /> 更换头像</span>
           <span v-else>上传中...</span>
         </div>
       </div>
@@ -126,6 +126,8 @@ import * as api from '../../services/api'
 import UserAvatar from '../../components/UserAvatar.vue'
 import WheelPicker from '../../components/WheelPicker.vue'
 import { regions } from '../../data/region-data'
+import { Camera } from 'lucide-vue-next'
+import toast from '@/utils/toast'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -324,7 +326,7 @@ async function onFileChange(e) {
     const uploadedUrl = await api.uploadFile(file)
     avatarUrl.value = uploadedUrl
   } catch (err) {
-    alert(err.response?.data?.message || '头像上传失败')
+    toast.error(err.response?.data?.message || '头像上传失败')
     avatarPreview.value = ''
   } finally {
     uploading.value = false
@@ -364,10 +366,10 @@ async function save() {
     // 响应：UserDTO { user: {...}, location: {...} } → auth.updateUser 自动拆解
     const updated = await api.updateProfile(dto)
     auth.updateUser(updated)
-    alert('保存成功')
+    toast.success('保存成功')
     router.back()
   } catch (e) {
-    alert(e.response?.data?.message || '保存失败')
+    toast.error(e.response?.data?.message || '保存失败')
   } finally {
     saving.value = false
   }

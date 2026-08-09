@@ -3,7 +3,7 @@
     <div class="page-header"><h1>登录</h1></div>
     <div class="page-body">
       <div class="auth-header text-center mt-3">
-        <div class="auth-icon">💕</div>
+        <div class="auth-icon"><Heart :size="56" :fill="'var(--primary)'" :color="'var(--primary)'" /></div>
         <h2>好感度记账</h2>
       </div>
 
@@ -32,6 +32,8 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import { Heart } from 'lucide-vue-next'
+import toast from '@/utils/toast'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -46,7 +48,7 @@ async function handleLogin() {
     await auth.login(phone.value.trim(), password.value)
     router.replace('/relationship')
   } catch (e) {
-    alert(e.response?.data?.message || '登录失败')
+    toast.error(e.response?.data?.message || '登录失败')
   } finally {
     loading.value = false
   }

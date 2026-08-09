@@ -3,12 +3,13 @@
     <div class="page-header"><button class="btn btn-sm" @click="$router.back()">← 返回</button><h1>打分记录</h1></div>
     <div class="page-body">
       <LoadingSpinner v-if="loading" message="加载记录..." />
-      <EmptyState v-else-if="records.length === 0" icon="📋" message="还没有打分记录" />
+      <EmptyState v-else-if="records.length === 0" :icon="ClipboardList" message="还没有打分记录" />
       <div v-else>
         <div v-for="r in records" :key="r.id" class="card flex-between fade-in">
           <div class="flex gap-2">
             <div class="record-icon" :class="r.scoreChange > 0 ? 'bg-success' : 'bg-error'">
-              {{ r.scoreChange > 0 ? '➕' : '➖' }}
+              <Plus v-if="r.scoreChange > 0" :size="18" />
+              <Minus v-else :size="18" />
             </div>
             <div>
               <div>{{ r.reason || '无备注' }}</div>
@@ -35,6 +36,7 @@ import { ref, onMounted } from 'vue'
 import { useRelationshipStore } from '../../stores/relationship'
 import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import EmptyState from '../../components/EmptyState.vue'
+import { ClipboardList, Plus, Minus } from 'lucide-vue-next'
 
 const props = defineProps({ relationshipId: Number })
 const store = useRelationshipStore()

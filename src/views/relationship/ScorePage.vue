@@ -5,7 +5,7 @@
       <LoadingSpinner v-if="loading" message="加载打分项..." />
       <EmptyState
         v-else-if="store.scoreItems.length === 0"
-        icon="📝"
+        :icon="ClipboardList"
         message="还没有打分项目，先去添加吧"
         action-label="管理打分项"
         @action="$router.push(`/relationship/score-items/${relationshipId}`)"
@@ -18,7 +18,7 @@
             v-for="item in addItems" :key="item.id"
             class="tag tag-add score-chip"
             @click="openConfirm(item)"
-          >{{ item.icon || '👍' }} {{ item.itemName }} +{{ item.scoreValue }}</span>
+          >{{ item.icon || '+' }} {{ item.itemName }} +{{ item.scoreValue }}</span>
         </div>
         <!-- 扣分项 -->
         <h3 class="mb-1">扣分项目</h3>
@@ -27,7 +27,7 @@
             v-for="item in subItems" :key="item.id"
             class="tag tag-sub score-chip"
             @click="openConfirm(item)"
-          >{{ item.icon || '👎' }} {{ item.itemName }} {{ item.scoreValue }}</span>
+          >{{ item.icon || '-' }} {{ item.itemName }} {{ item.scoreValue }}</span>
         </div>
       </div>
     </div>
@@ -52,11 +52,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRelationshipStore } from '../../stores/relationship'
+import { useAuthStore } from '../../stores/auth'
 import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import EmptyState from '../../components/EmptyState.vue'
+import { ClipboardList } from 'lucide-vue-next'
+import toast from '@/utils/toast'
 
 const props = defineProps({ relationshipId: Number })
 const store = useRelationshipStore()
+const auth = useAuthStore()
 const loading = ref(false)
 const selectedItem = ref(null)
 const reason = ref('')
@@ -64,9 +68,16 @@ const reason = ref('')
 const addItems = computed(() => store.scoreItems.filter(i => i.type === 'ADD'))
 const subItems = computed(() => store.scoreItems.filter(i => i.type === 'SUB'))
 
+// 获取对方用户ID
+const targetUserId = computed(() => {
+  const rel = store.relationships.find(r => r.id === props.relationshipId) || store.relationship
+  if (!rel || !auth.user) return null
+  return rel.user1Id === auth.user.id ? rel.user2Id : rel.user1Id
+})
+
 onMounted(async () => {
   loading.value = true
-  await store.loadScoreItems()
+  await store.loadScoreItems(props.relationshipId)
   loading.value = false
 })
 
@@ -78,12 +89,17 @@ function openConfirm(item) {
 async function doScore() {
   if (!selectedItem.value) return
   try {
-    await store.scorePartner(selectedItem.value.id, reason.value)
+    await store.scorePartner(
+      props.relationshipId,
+      selectedItem.value.id,
+      reason.value,
+      targetUserId.value
+    )
     selectedItem.value = null
-    alert('打分成功！')
-    await store.loadScores()
+    toast.success('打分成功！已自动发送聊天消息通知对方。')
+    await store.loadScores(props.relationshipId)
   } catch (e) {
-    alert(e.response?.data?.message || '打分失败')
+    toast.error(e.response?.data?.message || '打分失败')
   }
 }
 </script>

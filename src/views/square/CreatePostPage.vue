@@ -30,6 +30,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as api from '../../services/api'
+import toast from '@/utils/toast'
 
 const router = useRouter()
 const content = ref('')
@@ -66,10 +67,10 @@ async function publish() {
     fd.append('content', content.value)
     imageUrls.forEach(url => fd.append('images', url))
     await api.createPost(fd)
-    alert('发布成功！')
+    toast.success('发布成功！')
     router.back()
   } catch (e) {
-    alert(e.response?.data?.message || '发布失败')
+    toast.error(e.response?.data?.message || '发布失败')
   } finally {
     posting.value = false
   }

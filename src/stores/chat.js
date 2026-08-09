@@ -51,12 +51,12 @@ export const useChatStore = defineStore('chat', () => {
     return { records: list, hasMore: pageNum < data.pages }
   }
 
-  function sendMessage(receiverId, content) {
-    wsSend(receiverId, content)
+  function sendMessage(receiverId, content, messageType = 'TEXT') {
+    wsSend(receiverId, content, messageType)
     // 乐观更新
     const conv = conversations.value.find(c => c.otherUser?.id === receiverId)
     if (conv) {
-      const msg = { senderId: 0, receiverId, content, createdAt: new Date().toISOString(), id: Date.now().toString() }
+      const msg = { senderId: 0, receiverId, content, messageType, createdAt: new Date().toISOString(), id: Date.now().toString() }
       conv.lastMessage = msg
       if (messages.value[conv.id]) {
         messages.value[conv.id].push(msg)

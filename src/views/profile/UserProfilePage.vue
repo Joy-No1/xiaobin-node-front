@@ -58,10 +58,24 @@
         </div>
       </div>
 
-      <div v-if="!isMe" class="mt-2">
-        <button class="btn btn-primary btn-block" @click="toggleFollow">
-          {{ following ? '✓ 已关注' : '+ 关注' }}
+      <div v-if="!isMe" class="mt-2 action-buttons">
+        <button
+          class="btn btn-block"
+          :class="following ? 'btn-outline' : 'btn-primary'"
+          @click="toggleFollow"
+        >
+          {{ following ? '已关注' : '+ 关注' }}
         </button>
+        <button
+          v-if="isMutualFollow"
+          class="btn btn-primary btn-block mt-2"
+          @click="goToChat"
+        >
+          <MessageCircle :size="16" class="inline-icon" /> 发消息
+        </button>
+        <p v-if="isMutualFollow" class="text-center text-secondary mt-1" style="font-size:12px">
+          你们已互相关注，可以开始聊天了
+        </p>
       </div>
     </div>
 
@@ -71,20 +85,29 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import * as api from '../../services/api'
 import UserAvatar from '../../components/UserAvatar.vue'
 import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import ErrorState from '../../components/ErrorState.vue'
+import { MessageCircle } from 'lucide-vue-next'
+import toast from '@/utils/toast'
+
+const router = useRouter()
 
 const props = defineProps({ userId: Number })
 const auth = useAuthStore()
 const user = ref(null)
 const userLocation = ref(null)
 const following = ref(false)
+const followedBy = ref(false) // 对方是否关注我
 const loading = ref(true)
 
 const isMe = computed(() => auth.user?.id === props.userId)
+
+// 是否互相关注
+const isMutualFollow = computed(() => following.value && followedBy.value)
 
 const locationLabel = computed(() => {
   if (!userLocation.value) return ''
@@ -130,10 +153,48 @@ onMounted(async () => {
       user.value = dto
       userLocation.value = null
     }
-    following.value = user.value?.isFollowed || false
+    following.value = user.value?.isFollowing || false
+    followedBy.value = user.value?.isFollowedBy || false
   } catch (e) { /* ignore */ }
   loading.value = false
 })
+
+async function goToChat() {
+  try {
+    const myId = auth.user?.id
+    const targetId = props.userId
+
+    // 先查找是否有现有会话
+    const conversations = await api.getConversations()
+    const existingConversation = conversations.find(conv => 
+      (conv.user1Id === myId && conv.user2Id === targetId) ||
+      (conv.user1Id === targetId && conv.user2Id === myId)
+    )
+
+    if (existingConversation?.id) {
+      // 有现有会话，直接跳转
+      router.push(`/chat/${existingConversation.id}`)
+      return
+    }
+
+    // 没有现有会话，创建新会话
+    const conversation = await api.createConversation(targetId)
+    
+    if (conversation?.id) {
+      // 发送一条欢迎消息
+      try {
+        await api.sendMessage(conversation.id, '我们已互相关注啦，开始聊天吧！💕', myId)
+      } catch (e) {
+        console.error('发送欢迎消息失败:', e)
+      }
+      
+      router.push(`/chat/${conversation.id}`)
+    }
+  } catch (e) {
+    console.error('打开聊天失败:', e)
+    toast.error('无法打开聊天，请稍后重试')
+  }
+}
 
 async function toggleFollow() {
   try {
@@ -144,7 +205,7 @@ async function toggleFollow() {
     }
     following.value = !following.value
   } catch (e) {
-    alert('操作失败')
+    toast.error('操作失败')
   }
 }
 

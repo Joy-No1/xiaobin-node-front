@@ -248,3 +248,82 @@ body {
 .pulse {
   animation: pulse 0.4s ease;
 }
+
+/* ==================== Toast Notifications ==================== */
+/* 覆盖 vue-toastification 默认样式，匹配项目设计风格 */
+:root {
+  --toastify-color-success: var(--success);
+  --toastify-color-error: var(--error);
+  --toastify-color-warning: var(--secondary);
+  --toastify-color-info: #3498DB;
+}
+
+.Vue-Toastification__toast {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  border-radius: var(--radius) !important;
+  padding: 14px 18px !important;
+  min-height: 48px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important;
+  margin-bottom: 8px !important;
+}
+
+.Vue-Toastification__toast--success {
+  background: #E8F8F5 !important;
+  color: #1a7a4c !important;
+  border-left: 4px solid var(--success) !important;
+}
+
+.Vue-Toastification__toast--error {
+  background: #FDEDEC !important;
+  color: #922B21 !important;
+  border-left: 4px solid var(--error) !important;
+}
+
+.Vue-Toastification__toast--warning {
+  background: #FEF9E7 !important;
+  color: #7D6608 !important;
+  border-left: 4px solid var(--secondary) !important;
+}
+
+.Vue-Toastification__toast--info {
+  background: #EBF5FB !important;
+  color: #1A5276 !important;
+  border-left: 4px solid #3498DB !important;
+}
+
+.Vue-Toastification__toast-body {
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+}
+
+/* 进度条颜色匹配各类提示 */
+.Vue-Toastification__progress-bar {
+  height: 3px !important;
+}
+
+.Vue-Toastification__toast--success .Vue-Toastification__progress-bar {
+  background: var(--success) !important;
+}
+
+.Vue-Toastification__toast--error .Vue-Toastification__progress-bar {
+  background: var(--error) !important;
+}
+
+.Vue-Toastification__toast--warning .Vue-Toastification__progress-bar {
+  background: var(--secondary) !important;
+}
+
+.Vue-Toastification__toast--info .Vue-Toastification__progress-bar {
+  background: #3498DB !important;
+}
+
+/* 关闭按钮 */
+.Vue-Toastification__close-button {
+  color: inherit !important;
+  opacity: 0.5 !important;
+}
+
+.Vue-Toastification__close-button:hover {
+  opacity: 0.8 !important;
+}

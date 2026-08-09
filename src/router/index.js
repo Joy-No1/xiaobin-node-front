@@ -48,7 +48,7 @@ const routes = [
       {
         path: 'square/post/:id',
         component: () => import('../views/square/PostDetailPage.vue'),
-        props: route => ({ postId: Number(route.params.id) })
+        props: route => ({ postId: route.params.id })
       },
       {
         path: 'square/create',
@@ -70,6 +70,18 @@ const routes = [
       {
         path: 'profile/edit',
         component: () => import('../views/profile/EditProfilePage.vue')
+      },
+      {
+        path: 'profile/my-following',
+        component: () => import('../views/profile/MyFollowingPage.vue')
+      },
+      {
+        path: 'profile/my-likes',
+        component: () => import('../views/profile/MyLikesPage.vue')
+      },
+      {
+        path: 'profile/my-comments',
+        component: () => import('../views/profile/MyCommentsPage.vue')
       },
       {
         path: 'profile/:userId',

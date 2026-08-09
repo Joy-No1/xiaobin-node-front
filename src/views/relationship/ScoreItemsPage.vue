@@ -3,11 +3,13 @@
     <div class="page-header"><button class="btn btn-sm" @click="$router.back()">← 返回</button><h1>管理打分项</h1></div>
     <div class="page-body">
       <LoadingSpinner v-if="loading" />
-      <EmptyState v-else-if="items.length === 0" icon="📝" message="还没有打分项目，点击右下角添加" />
+      <EmptyState v-else-if="items.length === 0" :icon="ClipboardList" message="还没有打分项目，点击右下角添加" />
       <div v-else>
         <div v-for="item in items" :key="item.id" class="card flex-between fade-in">
           <div class="flex gap-2">
-            <span style="font-size:24px">{{ item.icon || (item.type === 'ADD' ? '👍' : '👎') }}</span>
+            <span v-if="item.icon" style="font-size:24px">{{ item.icon }}</span>
+            <ThumbsUp v-else-if="item.type === 'ADD'" :size="24" class="text-success" />
+            <ThumbsDown v-else :size="24" class="text-error" />
             <div>
               <div>{{ item.itemName }}</div>
               <span :class="item.type === 'ADD' ? 'text-success' : 'text-error'">
@@ -16,15 +18,15 @@
             </div>
           </div>
           <div class="flex gap-1">
-            <button class="btn btn-sm" @click="editItem(item)">✏️</button>
-            <button class="btn btn-sm" style="color:var(--error)" @click="removeItem(item.id)">🗑</button>
+            <button class="btn btn-sm" @click="editItem(item)"><PenLine :size="14" /></button>
+            <button class="btn btn-sm" style="color:var(--error)" @click="removeItem(item.id)"><Trash2 :size="14" /></button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- FAB 添加按钮 -->
-    <button class="fab" @click="openAdd">＋</button>
+    <button class="fab" @click="openAdd"><Plus :size="24" /></button>
 
     <!-- 编辑弹窗 -->
     <div v-if="showDialog" class="modal-overlay" @click.self="showDialog = false">
@@ -32,7 +34,7 @@
         <h3>{{ editingItem ? '编辑' : '添加' }}打分项</h3>
         <input v-model="form.itemName" class="form-input mt-2" placeholder="名称" />
         <input v-model.number="form.scoreValue" type="number" class="form-input mt-1" placeholder="分值" />
-        <input v-model="form.icon" class="form-input mt-1" placeholder="图标 emoji（如 🍳）" />
+        <input v-model="form.icon" class="form-input mt-1" placeholder="图标（可留空，默认用 thumbs 图标）" />
         <div class="flex gap-1 mt-1">
           <button class="btn btn-sm" :class="{ 'btn-primary': form.type === 'ADD' }" @click="form.type = 'ADD'">加分</button>
           <button class="btn btn-sm" :class="{ 'btn-primary': form.type === 'SUB' }" @click="form.type = 'SUB'">扣分</button>
@@ -51,6 +53,7 @@ import { ref, onMounted } from 'vue'
 import { useRelationshipStore } from '../../stores/relationship'
 import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import EmptyState from '../../components/EmptyState.vue'
+import { ClipboardList, PenLine, Trash2, ThumbsUp, ThumbsDown, Plus } from 'lucide-vue-next'
 
 const props = defineProps({ relationshipId: Number })
 const store = useRelationshipStore()

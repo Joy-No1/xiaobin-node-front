@@ -34,6 +34,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import toast from '@/utils/toast'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -45,14 +46,14 @@ const loading = ref(false)
 
 async function handleRegister() {
   if (!phone.value.trim() || !nickname.value.trim() || !password.value) return
-  if (password.value !== confirm.value) return alert('两次密码不一致')
-  if (password.value.length < 6) return alert('密码至少6位')
+  if (password.value !== confirm.value) return toast.warning('两次密码不一致')
+  if (password.value.length < 6) return toast.warning('密码至少6位')
   loading.value = true
   try {
     await auth.register(phone.value.trim(), password.value, nickname.value.trim())
     router.replace('/relationship')
   } catch (e) {
-    alert(e.response?.data?.message || '注册失败')
+    toast.error(e.response?.data?.message || '注册失败')
   } finally {
     loading.value = false
   }

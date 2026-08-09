@@ -1,7 +1,7 @@
 <template>
   <div class="splash flex-center">
     <div class="splash-content fade-in">
-      <div class="splash-icon">💕</div>
+      <div class="splash-icon"><Heart :size="72" :fill="'var(--primary)'" :color="'var(--primary)'" /></div>
       <h1 class="splash-title">好感度记账</h1>
       <div class="spinner-small"></div>
     </div>
@@ -12,6 +12,7 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { Heart } from 'lucide-vue-next'
 
 const router = useRouter()
 const auth = useAuthStore()

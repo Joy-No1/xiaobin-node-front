@@ -52,6 +52,11 @@ export function getUserProfile(id) {
   return api.get(`/users/${id}`).then(r => r.data.data)
 }
 
+// 批量获取用户信息
+export function getUsersByIds(ids) {
+  return api.post('/users/batch', { params: { ids: ids } }).then(r => r.data.data)
+}
+
 export function searchUserByPhone(phone) {
   return api.get('/users/search', { params: { phone } }).then(r => r.data.data)
 }
@@ -64,10 +69,20 @@ export function unfollowUser(id) {
   return api.delete(`/users/${id}/follow`)
 }
 
+// ==================== Dict ====================
+export function getDictItems(typeCode) {
+  return api.get('/dict/items', { params: { typeCode } }).then(r => r.data.data || [])
+}
+
 // ==================== Relationship ====================
-// 发起关系请求
-export function createRelationship(targetUserId) {
-  return api.post('/relationships', null, { params: { targetUserId } }).then(r => r.data.data)
+// 获取我的所有关系列表
+export function getMyRelationships() {
+  return api.get('/relationships/me').then(r => r.data.data || [])
+}
+
+// 发起关系请求（支持指定关系类型）
+export function createRelationship(targetUserId, relationType) {
+  return api.post('/relationships', null, { params: { targetUserId, relationType } }).then(r => r.data.data)
 }
 // 确认关系请求
 export function confirmRelationship(id) {
@@ -150,6 +165,12 @@ export function deletePost(id) {
   return api.delete(`/posts/${id}`)
 }
 
+export function updatePost(id, formData) {
+  return api.put(`/posts/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }).then(r => r.data.data)
+}
+
 export function likePost(id) {
   return api.post(`/posts/${id}/likes`)
 }
@@ -194,4 +215,42 @@ export function getMessages(conversationId, page = 1, size = 20) {
 
 export function markRead(conversationId) {
   return api.put(`/chat/conversations/${conversationId}/read`)
+}
+
+// 创建会话
+export function createConversation(targetUserId) {
+  return api.post('/chat/conversations', null, { params: { targetUserId } }).then(r => r.data.data)
+}
+
+// 发送消息
+export function sendMessage(conversationId, content, receiverId) {
+  return api.post(`/chat/conversations/${conversationId}/messages`, null, {
+    params: { content, receiverId }
+  }).then(r => r.data.data)
+}
+
+// ==================== Notifications ====================
+export function getNotifications(page = 1, size = 20) {
+  return api.get('/notifications', { params: { page, size } }).then(r => r.data.data)
+}
+
+export function markNotificationAsRead(id) {
+  return api.put(`/notifications/${id}/read`)
+}
+
+export function getUnreadNotificationCount() {
+  return api.get('/notifications/unread-count').then(r => r.data.data)
+}
+
+// ==================== My Profile (Follow/Likes/Comments) ====================
+export function getMyFollowing(page = 1, size = 20) {
+  return api.get('/me/following', { params: { page, size } }).then(r => r.data.data)
+}
+
+export function getMyLikes(page = 1, size = 20) {
+  return api.get('/me/likes', { params: { page, size } }).then(r => r.data.data)
+}
+
+export function getMyComments(page = 1, size = 20) {
+  return api.get('/me/comments', { params: { page, size } }).then(r => r.data.data)
 }
