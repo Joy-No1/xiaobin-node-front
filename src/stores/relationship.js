@@ -63,19 +63,21 @@ export const useRelationshipStore = defineStore('relationship', () => {
   async function loadAll() {
     loading.value = true
     try {
-      const [allRels, rel, sent, received] = await Promise.all([
+      const [allRels, sent, received] = await Promise.all([
         api.getMyRelationships().catch(() => []),
-        api.getMyRelationship().catch(() => null),
         api.getSentRequests().catch(() => []),
         api.getReceivedRequests().catch(() => [])
       ])
-      relationships.value = Array.isArray(allRels) ? allRels : []
-      relationship.value = rel
+      // 规范化数据：API 返回 { relationship: {...}, userVO: {...} }，展平为统一格式
+      relationships.value = (Array.isArray(allRels) ? allRels : []).map(item => ({
+        ...item.relationship,
+        otherUser: item.userVO
+      }))
+      console.log('所有的关系:', relationships.value)
       sentRequests.value = Array.isArray(sent) ? sent : []
       receivedRequests.value = Array.isArray(received) ? received : []
     } catch (e) {
       relationships.value = []
-      relationship.value = null
       sentRequests.value = []
       receivedRequests.value = []
     } finally {

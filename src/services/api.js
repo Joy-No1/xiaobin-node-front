@@ -54,7 +54,7 @@ export function getUserProfile(id) {
 
 // 批量获取用户信息
 export function getUsersByIds(ids) {
-  return api.post('/users/batch', { params: { ids: ids } }).then(r => r.data.data)
+  return api.post('/users/batch',  ids).then(r => r.data.data)
 }
 
 export function searchUserByPhone(phone) {

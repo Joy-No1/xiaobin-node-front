@@ -2,7 +2,7 @@
   <div class="splash flex-center">
     <div class="splash-content fade-in">
       <div class="splash-icon"><Heart :size="72" :fill="'var(--primary)'" :color="'var(--primary)'" /></div>
-      <h1 class="splash-title">好感度记账</h1>
+      <h1 class="splash-title">缘分记账本</h1>
       <div class="spinner-small"></div>
     </div>
   </div>

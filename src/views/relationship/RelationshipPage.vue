@@ -340,7 +340,14 @@ async function goToChat(rel) {
       conversation = await api.createConversation(other.id)
     }
     if (conversation?.id) {
-      router.push(`/chat/${conversation.id}`)
+      router.push({
+        path: `/chat/${conversation.id}`,
+        query: {
+          otherId: other.id,
+          otherName: other.nickname || '',
+          otherAvatar: other.avatarUrl || ''
+        }
+      })
     }
   } catch (e) {
     console.error('打开聊天失败:', e)
@@ -480,7 +487,7 @@ async function handleCancel(req) {
   try {
     await store.cancelRequest(req.id)
   } catch (e) {
-    toast.error('操作失败')
+    alert('操作失败')
   }
 }
 

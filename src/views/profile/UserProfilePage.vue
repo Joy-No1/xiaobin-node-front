@@ -2,7 +2,7 @@
   <div class="page">
     <div class="page-header">
       <button class="btn btn-sm" @click="$router.back()">← 返回</button>
-      <h1>{{ isMe ? '预览我的主页' : '用户主页' }}</h1>
+      <!-- <h1>{{ isMe ? '预览我的主页' : '用户主页' }}</h1> -->
       <span></span>
     </div>
 

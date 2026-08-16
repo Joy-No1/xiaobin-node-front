@@ -2,11 +2,6 @@
   <div class="page">
     <div class="page-header"><h1>登录</h1></div>
     <div class="page-body">
-      <div class="auth-header text-center mt-3">
-        <div class="auth-icon"><Heart :size="56" :fill="'var(--primary)'" :color="'var(--primary)'" /></div>
-        <h2>好感度记账</h2>
-      </div>
-
       <form @submit.prevent="handleLogin" class="auth-form">
         <div class="form-group">
           <label class="form-label">手机号</label>
@@ -32,7 +27,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
-import { Heart } from 'lucide-vue-next'
 import toast from '@/utils/toast'
 
 const router = useRouter()
