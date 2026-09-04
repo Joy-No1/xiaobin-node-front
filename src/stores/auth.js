@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { login as loginApi, register as registerApi, getMyProfile } from '../services/api'
 import { connect as wsConnect, disconnect as wsDisconnect } from '../services/websocket'
 
@@ -9,6 +9,7 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || '')
 
   const isLoggedIn = () => !!token.value
+  const isAuthenticated = computed(() => !!token.value && !!user.value)
 
   async function login(account, password) {
     const result = await loginApi({ account, password })
@@ -73,5 +74,5 @@ export const useAuthStore = defineStore('auth', () => {
     wsDisconnect()
   }
 
-  return { user, location, token, isLoggedIn, login, register, restoreSession, updateUser, logout }
+  return { user, location, token, isAuthenticated, isLoggedIn, login, register, restoreSession, updateUser, logout }
 })

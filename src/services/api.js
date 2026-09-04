@@ -254,3 +254,20 @@ export function getMyLikes(page = 1, size = 20) {
 export function getMyComments(page = 1, size = 20) {
   return api.get('/me/comments', { params: { page, size } }).then(r => r.data.data)
 }
+
+// ==================== Online Status ====================
+export function checkUserOnline(userId) {
+  return api.get(`/online/check/${userId}`).then(r => r.data.data)
+}
+
+export function batchCheckOnline(userIds) {
+  return api.post('/online/batch-check', userIds).then(r => r.data.data)
+}
+
+export function getOnlineCount() {
+  return api.get('/online/count').then(r => r.data.data)
+}
+
+export function getUserConnections(userId) {
+  return api.get(`/online/connections/${userId}`).then(r => r.data.data)
+}

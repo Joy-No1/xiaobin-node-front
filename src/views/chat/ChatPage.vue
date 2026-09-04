@@ -13,7 +13,9 @@
       />
       <div class="header-info" @click="showProfile = true">
         <h1>{{ otherName }}</h1>
-        <span class="online-status">在线</span>
+        <span class="online-status" :class="{ 'is-online': isOnline }">
+          {{ isOnline ? '在线' : '离线' }}
+        </span>
       </div>
       <button class="header-btn" @click="showProfile = true"><User :size="18" /></button>
     </div>
@@ -207,6 +209,7 @@ const previewVideoUrl = ref(null)
 const hasMore = ref(false)
 const loadingMore = ref(false)
 const wsState = ref('disconnected')
+const isOnline = ref(false) // 对方是否在线
 
 // 语音录制
 const isRecording = ref(false)
@@ -214,6 +217,7 @@ const recordingTime = ref(0)
 let recordingTimer = null
 let mediaRecorder = null
 let audioChunks = []
+let onlineCheckInterval = null // 在线状态检查定时器
 
 const imageInput = ref(null)
 const videoInput = ref(null)
@@ -303,10 +307,24 @@ onMounted(async () => {
   await chat.markAsRead(props.conversationId)
   await nextTick()
   scrollBottom()
+
+  // 检查对方在线状态
+  if (otherUser.value?.id) {
+    checkOnlineStatus()
+    // 每30秒检查一次在线状态
+    onlineCheckInterval = setInterval(() => {
+      checkOnlineStatus()
+    }, 30000)
+  }
 })
 
 onUnmounted(() => {
   stopRecording()
+  // 清除在线状态检查定时器
+  if (onlineCheckInterval) {
+    clearInterval(onlineCheckInterval)
+    onlineCheckInterval = null
+  }
 })
 
 function scrollBottom() {
@@ -315,6 +333,22 @@ function scrollBottom() {
       msgContainer.value.scrollTop = msgContainer.value.scrollHeight
     }
   })
+}
+
+// 检查对方在线状态
+async function checkOnlineStatus() {
+  if (!otherUser.value?.id) return
+
+  try {
+    const result = await api.checkUserOnline(otherUser.value.id)
+    // 返回格式: { "123": true, "456": false }
+    const userId = String(otherUser.value.id)
+    isOnline.value = result[userId] === true
+    console.log('[ChatPage] 对方在线状态:', isOnline.value)
+  } catch (error) {
+    console.error('[ChatPage] 检查在线状态失败:', error)
+    // 失败时保持之前的状态
+  }
 }
 
 function handleScroll() {
@@ -370,12 +404,23 @@ async function sendText() {
   const receiverId = otherUser.value?.id
   if (!receiverId) {
     toast.error('无法发送消息，对方信息缺失')
+    console.error('[ChatPage] 发送失败: receiverId 为空', { otherUser: otherUser.value })
     return
   }
-  chat.sendMessage(receiverId, content)
-  msgList.value = chat.messages[props.conversationId] || []
-  await nextTick()
-  scrollBottom()
+
+  console.log('[ChatPage] 发送消息到:', receiverId, '内容:', content, 'WebSocket状态:', wsState.value)
+
+  const success = chat.sendMessage(receiverId, content)
+
+  if (!success) {
+    toast.error('消息发送失败，请检查网络连接')
+    console.error('[ChatPage] sendMessage 返回 false')
+  } else {
+    console.log('[ChatPage] 消息已发送，更新本地列表')
+    msgList.value = chat.messages[props.conversationId] || []
+    await nextTick()
+    scrollBottom()
+  }
 }
 
 // 表情
@@ -671,7 +716,14 @@ function formatTime(dateStr) {
   min-width: 0;
 }
 .header-info h1 { font-size: 16px; font-weight: 600; margin: 0; }
-.online-status { font-size: 11px; color: #16a34a; }
+.online-status {
+  font-size: 11px;
+  color: #9ca3af;
+  transition: color 0.3s;
+}
+.online-status.is-online {
+  color: #16a34a;
+}
 
 .header-btn {
   width: 36px;
