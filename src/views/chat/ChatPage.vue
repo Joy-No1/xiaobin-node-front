@@ -341,9 +341,17 @@ async function checkOnlineStatus() {
 
   try {
     const result = await api.checkUserOnline(otherUser.value.id)
-    // 返回格式: { "123": true, "456": false }
-    const userId = String(otherUser.value.id)
-    isOnline.value = result[userId] === true
+    console.log('[ChatPage] 在线状态 API 返回:', result)
+
+    // 后端返回格式: { userId: 2, online: true }
+    if (result && typeof result.online === 'boolean') {
+      isOnline.value = result.online
+    } else {
+      // 兼容旧格式: { "2": true }
+      const userId = String(otherUser.value.id)
+      isOnline.value = result[userId] === true
+    }
+
     console.log('[ChatPage] 对方在线状态:', isOnline.value)
   } catch (error) {
     console.error('[ChatPage] 检查在线状态失败:', error)

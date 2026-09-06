@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page edit-profile-page">
     <div class="page-header flex-between">
       <button class="btn btn-sm" @click="$router.back()">← 返回</button>
       <h1>编辑资料</h1>
@@ -7,79 +7,126 @@
         {{ saving ? '保存中...' : '保存' }}
       </button>
     </div>
-    <div class="page-body text-center" v-if="auth.user">
+    <div class="page-body" v-if="auth.user">
       <!-- 头像编辑 -->
-      <div class="avatar-upload" @click="triggerUpload">
-        <UserAvatar :src="avatarPreview || auth.user.avatarUrl" :name="form.nickname || auth.user.nickname" :size="72" />
-        <div class="avatar-overlay">
-          <span v-if="!uploading"><Camera :size="14" class="inline-icon" /> 更换头像</span>
-          <span v-else>上传中...</span>
+      <div class="avatar-section">
+        <div class="avatar-upload" @click="triggerUpload">
+          <UserAvatar :src="avatarPreview || auth.user.avatarUrl" :name="form.nickname || auth.user.nickname" :size="80" />
+          <div class="avatar-overlay">
+            <Camera :size="18" />
+            <span v-if="!uploading">更换头像</span>
+            <span v-else>上传中...</span>
+          </div>
         </div>
+        <p class="avatar-hint">点击头像更换</p>
       </div>
       <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileChange" />
+      <input ref="backgroundInput" type="file" accept="image/*" style="display:none" @change="onBackgroundChange" />
 
-      <div class="form-group mt-2" style="text-align:left">
-        <label class="form-label">昵称</label>
-        <input v-model="form.nickname" class="form-input" :placeholder="auth.user.nickname" />
-      </div>
-      <div class="form-group" style="text-align:left">
-        <label class="form-label">简介</label>
-        <textarea v-model="form.bio" class="form-input" rows="3" :placeholder="auth.user.bio || '介绍一下自己...'"></textarea>
-      </div>
-      <div class="form-group" style="text-align:left">
-        <label class="form-label">性别</label>
-        <div class="flex gap-2">
-          <label class="radio-label"><input type="radio" v-model="form.gender" value="MALE" /> 男</label>
-          <label class="radio-label"><input type="radio" v-model="form.gender" value="FEMALE" /> 女</label>
+      <!-- 基础信息卡片 -->
+      <div class="info-card">
+        <div class="card-title">基础信息</div>
+        <div class="form-group">
+          <label class="form-label">昵称</label>
+          <input v-model="form.nickname" class="form-input" :placeholder="auth.user.nickname || '请输入昵称'" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">邮箱</label>
+          <input v-model="form.email" type="email" class="form-input" :placeholder="auth.user.email || '请输入邮箱'" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">简介</label>
+          <textarea v-model="form.bio" class="form-input" rows="3" :placeholder="auth.user.bio || '介绍一下自己...'"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">性别</label>
+          <div class="gender-buttons">
+            <button
+              class="gender-btn"
+              :class="{ active: form.gender === 'MALE' }"
+              @click="form.gender = 'MALE'"
+            >
+              男
+            </button>
+            <button
+              class="gender-btn"
+              :class="{ active: form.gender === 'FEMALE' }"
+              @click="form.gender = 'FEMALE'"
+            >
+              女
+            </button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">生日</label>
+          <div class="form-picker-trigger" @click="openBirthdayPicker">
+            <span :class="{ placeholder: !birthdayDisplay }">{{ birthdayDisplay || '请选择生日' }}</span>
+            <span class="picker-arrow">›</span>
+          </div>
         </div>
       </div>
 
-      <!-- 生日 - 滚轮选择器 -->
-      <div class="form-group" style="text-align:left">
-        <label class="form-label">生日</label>
-        <div class="form-picker-trigger" @click="openBirthdayPicker">
-          <span :class="{ placeholder: !birthdayDisplay }">{{ birthdayDisplay || '请选择生日' }}</span>
-          <span class="picker-arrow">›</span>
+      <!-- 工作教育卡片 -->
+      <div class="info-card">
+        <div class="card-title">工作与教育</div>
+        <div class="form-group">
+          <label class="form-label">公司</label>
+          <input v-model="form.company" class="form-input" placeholder="输入公司名称" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">学校</label>
+          <input v-model="form.school" class="form-input" placeholder="输入学校名称" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">学历</label>
+          <select v-model="form.education" class="form-input">
+            <option value="">请选择</option>
+            <option value="HIGH_SCHOOL">高中</option>
+            <option value="ASSOCIATE">大专</option>
+            <option value="BACHELOR">本科</option>
+            <option value="MASTER">硕士研究生</option>
+            <option value="DOCTOR">博士研究生</option>
+            <option value="OTHER">其他</option>
+          </select>
         </div>
       </div>
 
-      <div class="form-group" style="text-align:left">
-        <label class="form-label">公司</label>
-        <input v-model="form.company" class="form-input" placeholder="输入公司名称" />
-      </div>
-      <div class="form-group" style="text-align:left">
-        <label class="form-label">学校</label>
-        <input v-model="form.school" class="form-input" placeholder="输入学校名称" />
-      </div>
-      <div class="form-group" style="text-align:left">
-        <label class="form-label">学历</label>
-        <select v-model="form.education" class="form-input">
-          <option value="">请选择</option>
-          <option value="HIGH_SCHOOL">高中</option>
-          <option value="ASSOCIATE">大专</option>
-          <option value="BACHELOR">本科</option>
-          <option value="MASTER">硕士研究生</option>
-          <option value="DOCTOR">博士研究生</option>
-          <option value="OTHER">其他</option>
-        </select>
-      </div>
-      <div class="form-row">
-        <div class="form-group" style="text-align:left;flex:1">
-          <label class="form-label">身高 (cm)</label>
-          <input type="number" v-model="form.height" class="form-input" step="0.1" min="0" />
+      <!-- 其他信息卡片 -->
+      <div class="info-card">
+        <div class="card-title">其他信息</div>
+        <div class="form-group">
+          <label class="form-label">背景图</label>
+          <div class="background-upload-row" @click="triggerBackgroundUpload">
+            <div class="background-preview">
+              <img
+                v-if="backgroundPreview || auth.user.profileBackgroundUrl"
+                :src="backgroundPreview || auth.user.profileBackgroundUrl"
+                alt="背景图"
+              />
+              <div v-else class="background-empty">
+                <Image :size="20" />
+              </div>
+            </div>
+            <span class="upload-text">{{ uploadingBackground ? '上传中...' : '点击上传背景图' }}</span>
+            <span class="picker-arrow">›</span>
+          </div>
         </div>
-        <div class="form-group" style="text-align:left;flex:1">
-          <label class="form-label">体重 (kg)</label>
-          <input type="number" v-model="form.weight" class="form-input" placeholder="60" step="0.1" min="0" />
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label class="form-label">身高 (cm)</label>
+            <input type="number" v-model="form.height" class="form-input" placeholder="170" step="0.1" min="0" />
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">体重 (kg)</label>
+            <input type="number" v-model="form.weight" class="form-input" placeholder="60" step="0.1" min="0" />
+          </div>
         </div>
-      </div>
-
-      <!-- 地区 - 级联滚轮选择器 -->
-      <div class="form-group" style="text-align:left">
-        <label class="form-label">地区</label>
-        <div class="form-picker-trigger" @click="openRegionPicker">
-          <span :class="{ placeholder: !regionDisplay }">{{ regionDisplay || '请选择地区' }}</span>
-          <span class="picker-arrow">›</span>
+        <div class="form-group">
+          <label class="form-label">地区</label>
+          <div class="form-picker-trigger" @click="openRegionPicker">
+            <span :class="{ placeholder: !regionDisplay }">{{ regionDisplay || '请选择地区' }}</span>
+            <span class="picker-arrow">›</span>
+          </div>
         </div>
       </div>
     </div>
@@ -119,14 +166,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import * as api from '../../services/api'
 import UserAvatar from '../../components/UserAvatar.vue'
 import WheelPicker from '../../components/WheelPicker.vue'
-import { regions } from '../../data/region-data'
-import { Camera } from 'lucide-vue-next'
+import { Camera, Image } from 'lucide-vue-next'
 import toast from '@/utils/toast'
 
 const router = useRouter()
@@ -137,6 +183,12 @@ const uploading = ref(false)
 const avatarUrl = ref(auth.user?.avatarUrl || '')
 const avatarPreview = ref('')
 const fileInput = ref(null)
+
+// 背景图相关
+const uploadingBackground = ref(false)
+const backgroundUrl = ref(auth.user?.profileBackgroundUrl || '')
+const backgroundPreview = ref('')
+const backgroundInput = ref(null)
 
 // ---- 生日相关 ----
 const showBirthdayPicker = ref(false)
@@ -209,91 +261,201 @@ function confirmBirthday() {
 
 // ---- 地区相关 ----
 const showRegionPicker = ref(false)
-const regionSelected = ref(['', '', '']) // [provinceValue, cityValue, districtValue]
+const regionSelected = ref(['', '', '']) // [provinceCode, cityCode, districtCode]
+const provinces = ref([]) // 省份列表
+const cities = ref([]) // 城市列表
+const districts = ref([]) // 区县列表
+const loadingRegion = ref(false)
+
+// 防抖定时器
+let cityDebounceTimer = null
+let districtDebounceTimer = null
+
+// 缓存已加载的数据，避免重复请求
+const regionCache = new Map()
 
 // 省份列
 const provinceColumn = computed(() => ({
-  items: regions.map(p => ({ label: p.label, value: p.value })),
+  items: provinces.value.map(p => ({ label: p.name, value: p.code })),
   flex: 1.2,
 }))
 
 // 城市列
-const cityColumn = computed(() => {
-  const pv = regionSelected.value[0]
-  const prov = regions.find(p => p.value === pv)
-  const cities = prov?.children || []
-  return {
-    items: cities.map(c => ({ label: c.label, value: c.value })),
-    flex: 1.2,
-  }
-})
+const cityColumn = computed(() => ({
+  items: cities.value.map(c => ({ label: c.name, value: c.code })),
+  flex: 1.2,
+}))
 
 // 区县列
-const districtColumn = computed(() => {
-  const pv = regionSelected.value[0]
-  const cv = regionSelected.value[1]
-  const prov = regions.find(p => p.value === pv)
-  const city = prov?.children?.find(c => c.value === cv)
-  const districts = city?.children || []
-  return {
-    items: districts.map(d => ({ label: d.label, value: d.value })),
-    flex: 1,
-  }
-})
+const districtColumn = computed(() => ({
+  items: districts.value.map(d => ({ label: d.name, value: d.code })),
+  flex: 1,
+}))
 
 const regionColumns = computed(() => [provinceColumn.value, cityColumn.value, districtColumn.value])
 
-function onRegionChange({ columnIndex }) {
-  const sel = [...regionSelected.value]
-  if (columnIndex === 0) {
-    // 省份变了，重置城市和区县为第一项
-    const prov = regions.find(p => p.value === sel[0])
-    const firstCity = prov?.children?.[0]
-    sel[1] = firstCity?.value || ''
-    sel[2] = firstCity?.children?.[0]?.value || ''
-  } else if (columnIndex === 1) {
-    // 城市变了，重置区县为第一项
-    const prov = regions.find(p => p.value === sel[0])
-    const city = prov?.children?.find(c => c.value === sel[1])
-    sel[2] = city?.children?.[0]?.value || ''
+// 加载省份列表
+async function loadProvinces() {
+  try {
+    loadingRegion.value = true
+
+    // 检查缓存
+    if (regionCache.has('provinces')) {
+      provinces.value = regionCache.get('provinces')
+    } else {
+      provinces.value = await api.getProvinces()
+      regionCache.set('provinces', provinces.value)
+    }
+
+    if (provinces.value.length > 0 && !regionSelected.value[0]) {
+      // 默认选中第一个省份
+      regionSelected.value[0] = provinces.value[0].code
+      await loadCities(provinces.value[0].code)
+    }
+  } catch (error) {
+    console.error('加载省份失败:', error)
+    toast.error('加载省份失败')
+  } finally {
+    loadingRegion.value = false
   }
-  regionSelected.value = sel
+}
+
+// 加载城市列表（带防抖）
+async function loadCities(provinceCode, immediate = false) {
+  // 清除之前的定时器
+  if (cityDebounceTimer) {
+    clearTimeout(cityDebounceTimer)
+    cityDebounceTimer = null
+  }
+
+  const doLoad = async () => {
+    try {
+      // 检查缓存
+      const cacheKey = `cities_${provinceCode}`
+      if (regionCache.has(cacheKey)) {
+        cities.value = regionCache.get(cacheKey)
+      } else {
+        cities.value = await api.getRegionChildren(provinceCode)
+        regionCache.set(cacheKey, cities.value)
+      }
+
+      if (cities.value.length > 0 && !regionSelected.value[1]) {
+        regionSelected.value[1] = cities.value[0].code
+        await loadDistricts(cities.value[0].code, true)
+      }
+    } catch (error) {
+      console.error('加载城市失败:', error)
+      toast.error('加载城市失败')
+    }
+  }
+
+  if (immediate) {
+    await doLoad()
+  } else {
+    // 防抖延迟 300ms
+    cityDebounceTimer = setTimeout(doLoad, 300)
+  }
+}
+
+// 加载区县列表（带防抖）
+async function loadDistricts(cityCode, immediate = false) {
+  // 清除之前的定时器
+  if (districtDebounceTimer) {
+    clearTimeout(districtDebounceTimer)
+    districtDebounceTimer = null
+  }
+
+  const doLoad = async () => {
+    try {
+      // 检查缓存
+      const cacheKey = `districts_${cityCode}`
+      if (regionCache.has(cacheKey)) {
+        districts.value = regionCache.get(cacheKey)
+      } else {
+        districts.value = await api.getRegionChildren(cityCode)
+        regionCache.set(cacheKey, districts.value)
+      }
+
+      if (districts.value.length > 0 && !regionSelected.value[2]) {
+        regionSelected.value[2] = districts.value[0].code
+      }
+    } catch (error) {
+      console.error('加载区县失败:', error)
+      toast.error('加载区县失败')
+    }
+  }
+
+  if (immediate) {
+    await doLoad()
+  } else {
+    // 防抖延迟 300ms
+    districtDebounceTimer = setTimeout(doLoad, 300)
+  }
+}
+
+// 地区选择变化
+async function onRegionChange({ columnIndex, selected }) {
+  if (columnIndex === 0) {
+    // 省份变了，重新加载城市
+    regionSelected.value = [selected[0], '', '']
+    cities.value = []
+    districts.value = []
+    await loadCities(selected[0], false) // 使用防抖
+  } else if (columnIndex === 1) {
+    // 城市变了，重新加载区县
+    regionSelected.value = [selected[0], selected[1], '']
+    districts.value = []
+    await loadDistricts(selected[1], false) // 使用防抖
+  } else {
+    regionSelected.value = selected
+  }
 }
 
 const regionDisplay = computed(() => {
   const [pv, cv, dv] = regionSelected.value
   if (!pv) return ''
-  const prov = regions.find(p => p.value === pv)
-  const city = prov?.children?.find(c => c.value === cv)
-  const district = city?.children?.find(d => d.value === dv)
-  return [prov?.label, city?.label, district?.label].filter(Boolean).join(' ')
+
+  const prov = provinces.value.find(p => p.code === pv)
+  const city = cities.value.find(c => c.code === cv)
+  const district = districts.value.find(d => d.code === dv)
+
+  return [prov?.name, city?.name, district?.name].filter(Boolean).join(' ')
 })
 
 // 从已有数据初始化地区
-function initRegion() {
-  const loc = auth.location
-  if (loc) {
-    const prov = regions.find(p => p.label === loc.province)
+async function initRegion() {
+  await loadProvinces()
+
+  const loc = auth.user?.location
+  if (loc && loc.province) {
+    const prov = provinces.value.find(p => p.name === loc.province)
     if (prov) {
-      regionSelected.value[0] = prov.value
-      const city = prov.children?.find(c => c.label === loc.city)
-      if (city) {
-        regionSelected.value[1] = city.value
-        const dist = city.children?.find(d => d.label === loc.district)
-        regionSelected.value[2] = dist?.value || ''
-        return
+      regionSelected.value[0] = prov.code
+      await loadCities(prov.code)
+
+      if (loc.city) {
+        const city = cities.value.find(c => c.name === loc.city)
+        if (city) {
+          regionSelected.value[1] = city.code
+          await loadDistricts(city.code)
+
+          if (loc.district) {
+            const dist = districts.value.find(d => d.name === loc.district)
+            if (dist) {
+              regionSelected.value[2] = dist.code
+            }
+          }
+        }
       }
     }
   }
-  // 默认选中第一个
-  const p0 = regions[0]
-  const c0 = p0?.children?.[0]
-  regionSelected.value = [p0?.value || '', c0?.value || '', c0?.children?.[0]?.value || '']
 }
-initRegion()
 
-function openRegionPicker() {
+async function openRegionPicker() {
   showRegionPicker.value = true
+  if (provinces.value.length === 0) {
+    await initRegion()
+  }
 }
 
 function confirmRegion() {
@@ -303,6 +465,7 @@ function confirmRegion() {
 // ---- 表单 ----
 const form = ref({
   nickname: auth.user?.nickname || '',
+  email: auth.user?.email || '',
   bio: auth.user?.bio || '',
   gender: auth.user?.gender || '',
   company: auth.user?.company || '',
@@ -334,22 +497,54 @@ async function onFileChange(e) {
   }
 }
 
+// ---- 上传背景图 ----
+function triggerBackgroundUpload() {
+  backgroundInput.value?.click()
+}
+
+async function onBackgroundChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+
+  // 检查文件大小（限制5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    toast.error('图片大小不能超过5MB')
+    return
+  }
+
+  backgroundPreview.value = URL.createObjectURL(file)
+  uploadingBackground.value = true
+  try {
+    const uploadedUrl = await api.uploadFile(file)
+    backgroundUrl.value = uploadedUrl
+    toast.success('背景图上传成功')
+  } catch (err) {
+    toast.error(err.response?.data?.message || '背景图上传失败')
+    backgroundPreview.value = ''
+  } finally {
+    uploadingBackground.value = false
+    if (backgroundInput.value) backgroundInput.value.value = ''
+  }
+}
+
 // ---- 保存 ----
 async function save() {
   saving.value = true
   try {
     // 请求体：UserDTO { user: {...}, location: { province, city, district } }
     const [pv, cv, dv] = regionSelected.value
-    const prov = regions.find(p => p.value === pv)
-    const city = prov?.children?.find(c => c.value === cv)
-    const district = city?.children?.find(d => d.value === dv)
+    const prov = provinces.value.find(p => p.code === pv)
+    const city = cities.value.find(c => c.code === cv)
+    const district = districts.value.find(d => d.code === dv)
 
     const dto = {
       user: {
         nickname: form.value.nickname,
+        email: form.value.email || null,
         bio: form.value.bio,
         gender: form.value.gender,
         avatarUrl: avatarUrl.value,
+        profileBackgroundUrl: backgroundUrl.value || null,
         birthday: birthdayDisplay.value || null,
         company: form.value.company || null,
         school: form.value.school || null,
@@ -358,9 +553,9 @@ async function save() {
         weight: form.value.weight ? Number(form.value.weight) : null
       },
       location: {
-        province: prov?.label || null,
-        city: city?.label || null,
-        district: district?.label || null
+        province: prov?.name || null,
+        city: city?.name || null,
+        district: district?.name || null
       }
     }
     // 响应：UserDTO { user: {...}, location: {...} } → auth.updateUser 自动拆解
@@ -377,64 +572,233 @@ async function save() {
 </script>
 
 <style scoped>
-.radio-label { cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 4px; }
+.edit-profile-page {
+  background: #F5F6F8;
+  min-height: 100vh;
+}
+
+.edit-profile-page .page-body {
+  background: transparent;
+  padding-bottom: 32px;
+}
+
+/* 头像区域 */
+.avatar-section {
+  text-align: center;
+  padding: 24px 0 20px;
+}
+
 .avatar-upload {
   position: relative;
   display: inline-block;
   cursor: pointer;
   border-radius: 50%;
   overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s;
 }
+
+.avatar-upload:hover {
+  transform: scale(1.05);
+}
+
 .avatar-overlay {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0, 0, 0, 0.5);
   color: #fff;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: 12px;
+  gap: 4px;
   opacity: 0;
   transition: opacity 0.2s;
 }
+
 .avatar-upload:hover .avatar-overlay,
 .avatar-upload:active .avatar-overlay {
   opacity: 1;
 }
+
+.avatar-hint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #666;
+}
+
+/* 背景图上传行 */
+.background-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.background-upload-row:hover {
+  border-color: #ccc;
+}
+
+.background-preview {
+  width: 60px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.background-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.background-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+}
+
+.upload-text {
+  flex: 1;
+  font-size: 14px;
+  color: #666;
+}
+
+/* 信息卡片 */
+.info-card {
+  background: #FAFBFC;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 0 16px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #E8EAED;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #E8EAED;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  background: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 138, 0.1);
+}
+
+/* 性别按钮 */
+.gender-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.gender-btn {
+  flex: 1;
+  padding: 12px;
+  background: #fff;
+  border: 2px solid #E8EAED;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gender-btn:hover {
+  border-color: #ccc;
+}
+
+.gender-btn.active {
+  background: rgba(255, 107, 138, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
 .form-row {
   display: flex;
   gap: 12px;
 }
+
 /* 选择器触发按钮 */
 .form-picker-trigger {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
-  background: var(--bg);
-  border: 1px solid var(--divider);
-  border-radius: var(--radius);
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #E8EAED;
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
+  transition: all 0.2s;
 }
+
+.form-picker-trigger:hover {
+  border-color: #ccc;
+}
+
 .form-picker-trigger .placeholder {
   color: #999;
 }
+
 .picker-arrow {
   color: #ccc;
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 300;
 }
+
 /* 选择器弹窗 */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   z-index: 200;
 }
+
 .picker-modal {
   background: var(--surface);
   border-radius: 16px 16px 0 0;
@@ -443,10 +807,12 @@ async function save() {
   padding-bottom: env(safe-area-inset-bottom, 16px);
   animation: slideUp 0.25s ease;
 }
+
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+
 .picker-modal-header {
   display: flex;
   justify-content: space-between;
@@ -454,6 +820,7 @@ async function save() {
   padding: 14px 16px;
   border-bottom: 1px solid var(--divider);
 }
+
 .picker-modal-header h3 {
   font-size: 16px;
   margin: 0;

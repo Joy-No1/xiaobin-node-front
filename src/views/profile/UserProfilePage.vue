@@ -1,25 +1,43 @@
 <template>
   <div class="page">
-    <div class="page-header">
-      <button class="btn btn-sm" @click="$router.back()">← 返回</button>
-      <!-- <h1>{{ isMe ? '预览我的主页' : '用户主页' }}</h1> -->
-      <span></span>
+    <div class="page-header flex-between">
+      <button class="btn btn-sm" @click="$router.back()">
+        <ChevronLeft :size="16" />
+      </button>
+      <button v-if="isMe" class="btn btn-sm btn-primary" @click="$router.push('/profile/edit')">
+        <PenLine :size="16" />
+      </button>
     </div>
 
     <LoadingSpinner v-if="loading" />
 
     <div v-else-if="user" class="page-body fade-in">
       <!-- 顶部头像区 -->
-      <div class="profile-header text-center">
-        <UserAvatar :src="user.avatarUrl" :name="user.nickname" :size="80" />
-        <h2 class="mt-2">{{ user.nickname }}</h2>
-        <p v-if="user.bio" class="text-secondary" style="font-size:13px;margin-top:2px">{{ user.bio }}</p>
+      <div class="profile-header" @click="viewBackground">
+        <!-- 背景图层 -->
+        <div class="header-background">
+          <img
+            :src="user?.profileBackgroundUrl || defaultBackground"
+            alt="背景图"
+            class="background-image"
+          />
+        </div>
+        <!-- 内容层 -->
+        <div class="header-content">
+          <UserAvatar :src="user.avatarUrl" :name="user.nickname" :size="80" />
+          <h2 class="mt-2">{{ user.nickname }}</h2>
+          <p v-if="user.bio" class="bio-text">{{ user.bio }}</p>
+        </div>
       </div>
 
       <!-- 个人资料卡片 -->
       <div class="profile-card mt-2">
         <div class="profile-card-title">个人资料</div>
         <div class="profile-grid">
+          <div class="profile-item" v-if="user.email">
+            <span class="profile-label">邮箱</span>
+            <span class="profile-value">{{ user.email }}</span>
+          </div>
           <div class="profile-item" v-if="user.gender || user.birthday">
             <span class="profile-label">性别 / 年龄</span>
             <span class="profile-value">
@@ -80,6 +98,17 @@
     </div>
 
     <ErrorState v-else message="用户不存在" />
+
+    <!-- 背景图查看弹窗 -->
+    <div v-if="showBackgroundDialog" class="modal-overlay" @click="showBackgroundDialog = false">
+      <div class="background-viewer">
+        <img
+          :src="user?.profileBackgroundUrl || defaultBackground"
+          alt="背景图"
+          class="full-background"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -91,8 +120,10 @@ import * as api from '../../services/api'
 import UserAvatar from '../../components/UserAvatar.vue'
 import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import ErrorState from '../../components/ErrorState.vue'
-import { MessageCircle } from 'lucide-vue-next'
+import { MessageCircle, PenLine, ChevronLeft } from 'lucide-vue-next'
 import toast from '@/utils/toast'
+
+const defaultBackground = new URL('../../assets/images/default_background_img.jpg', import.meta.url).href
 
 const router = useRouter()
 
@@ -103,6 +134,7 @@ const userLocation = ref(null)
 const following = ref(false)
 const followedBy = ref(false) // 对方是否关注我
 const loading = ref(true)
+const showBackgroundDialog = ref(false)
 
 const isMe = computed(() => auth.user?.id === props.userId)
 
@@ -166,7 +198,7 @@ async function goToChat() {
 
     // 先查找是否有现有会话
     const conversations = await api.getConversations()
-    const existingConversation = conversations.find(conv => 
+    const existingConversation = conversations.find(conv =>
       (conv.user1Id === myId && conv.user2Id === targetId) ||
       (conv.user1Id === targetId && conv.user2Id === myId)
     )
@@ -179,7 +211,7 @@ async function goToChat() {
 
     // 没有现有会话，创建新会话
     const conversation = await api.createConversation(targetId)
-    
+
     if (conversation?.id) {
       // 发送一条欢迎消息
       try {
@@ -187,13 +219,17 @@ async function goToChat() {
       } catch (e) {
         console.error('发送欢迎消息失败:', e)
       }
-      
+
       router.push(`/chat/${conversation.id}`)
     }
   } catch (e) {
     console.error('打开聊天失败:', e)
     toast.error('无法打开聊天，请稍后重试')
   }
+}
+
+function viewBackground() {
+  showBackgroundDialog.value = true
 }
 
 async function toggleFollow() {
@@ -218,44 +254,165 @@ function formatDate(dateStr) {
 </script>
 
 <style scoped>
-.profile-header {
-  padding: 8px 0 16px;
+.page {
+  background: #F5F6F8;
+  min-height: 100vh;
 }
+
+.profile-header {
+  position: relative;
+  padding: 24px 0 20px;
+  text-align: center;
+  cursor: pointer;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+/* 背景图层 */
+.header-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+.background-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 内容层 */
+.header-content {
+  position: relative;
+  z-index: 2;
+}
+
+.header-content h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  margin: 12px 0 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.bio-text {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 13px;
+  margin-top: 2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 背景图查看弹窗 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.background-viewer {
+  max-width: 90%;
+  max-height: 80%;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.full-background {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .profile-card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 16px;
+  background: #FAFBFC;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #E8EAED;
   text-align: left;
 }
+
 .profile-card-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--divider);
+  color: #333;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #E8EAED;
 }
+
 .profile-grid {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
+
 .profile-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 8px 0;
 }
+
 .profile-label {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 14px;
+  color: #666;
   flex-shrink: 0;
+  font-weight: 500;
+  min-width: 80px;
 }
+
 .profile-value {
   font-size: 14px;
-  color: var(--text-primary);
+  color: #333;
   text-align: right;
+  flex: 1;
 }
+
+.action-buttons {
+  padding: 0 16px;
+}
+
 .btn-block {
   width: 100%;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 10px;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-secondary {
+  color: #999;
+}
+
+.mt-1 {
+  margin-top: 8px;
+}
+
+.mt-2 {
+  margin-top: 16px;
 }
 </style>

@@ -64,7 +64,7 @@ const editingItem = ref(null)
 const form = ref({ itemName: '', scoreValue: 10, type: 'ADD', icon: '' })
 
 onMounted(async () => {
-  await store.loadScoreItems()
+  await store.loadScoreItems(props.relationshipId)
   items.value = store.scoreItems
   loading.value = false
 })
@@ -95,9 +95,9 @@ async function saveItem() {
     icon: form.value.icon || undefined
   }
   if (editingItem.value) {
-    await store.editScoreItem(editingItem.value.id, data)
+    await store.editScoreItem(props.relationshipId, editingItem.value.id, data)
   } else {
-    await store.addScoreItem(data)
+    await store.addScoreItem(props.relationshipId, data)
   }
   items.value = store.scoreItems
   showDialog.value = false
@@ -105,7 +105,7 @@ async function saveItem() {
 
 async function removeItem(itemId) {
   if (!confirm('确定删除？')) return
-  await store.removeScoreItem(itemId)
+  await store.removeScoreItem(props.relationshipId, itemId)
   items.value = store.scoreItems
 }
 </script>

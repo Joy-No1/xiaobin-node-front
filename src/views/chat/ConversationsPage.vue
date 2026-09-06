@@ -87,6 +87,9 @@
                 :name="conv.otherUser?.nickname || '?'"
                 :size="52"
               />
+              <!-- 在线状态指示器 -->
+              <div v-if="getOnlineStatus(conv.otherUser?.id)" class="online-indicator"></div>
+              <!-- 未读数徽章 -->
               <div v-if="conv.unreadCount" class="unread-badge">{{ conv.unreadCount > 99 ? '99+' : conv.unreadCount }}</div>
             </div>
             <div class="chat-content">
@@ -95,7 +98,7 @@
                 <span class="chat-time">{{ timeAgo(conv.updatedAt) }}</span>
               </div>
               <div class="chat-preview">
-                {{ conv.lastMessage?.content || '发起了聊天' }}
+                {{ getLastMessagePreview(conv) }}
               </div>
             </div>
           </div>
@@ -168,12 +171,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { MessageCircle, Heart, UserPlus, MessageSquare, ChevronRight, X, Bell } from 'lucide-vue-next'
 import { useChatStore } from '../../stores/chat'
 import { useNotificationStore } from '../../stores/notification'
-import { onStateChange } from '../../services/websocket'
+import { onStateChange, getState } from '../../services/websocket'
+import * as api from '../../services/api'
 import UserAvatar from '../../components/UserAvatar.vue'
 import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import EmptyState from '../../components/EmptyState.vue'
@@ -185,6 +189,8 @@ const wsState = ref('disconnected')
 const loadingMore = ref(false)
 const showNotificationDrawer = ref(false)
 const currentNotificationType = ref(null)
+const onlineStatusMap = ref({}) // 存储所有用户的在线状态 { userId: boolean }
+let onlineStatusInterval = null // 定时检查在线状态
 
 // 计算各类型通知的未读数
 const likeCount = computed(() => {
@@ -224,11 +230,37 @@ const drawerTitle = computed(() => {
 })
 
 onMounted(async () => {
-  onStateChange((s) => { wsState.value = s })
+  // 获取当前 WebSocket 状态
+  const currentState = getState()
+  wsState.value = currentState
+  console.log('[ConversationsPage] 当前 WebSocket 状态:', currentState)
+
+  // 监听状态变化
+  onStateChange((s) => {
+    wsState.value = s
+    console.log('[ConversationsPage] WebSocket 状态变化:', s)
+  })
+
   await Promise.all([
     chat.loadConversations(),
     notificationStore.loadNotifications(1)
   ])
+
+  // 加载完会话后，批量检查在线状态
+  await batchCheckOnlineStatus()
+
+  // 每30秒自动刷新在线状态
+  onlineStatusInterval = setInterval(() => {
+    batchCheckOnlineStatus()
+  }, 30000)
+})
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  if (onlineStatusInterval) {
+    clearInterval(onlineStatusInterval)
+    onlineStatusInterval = null
+  }
 })
 
 function showNotifications(type) {
@@ -260,6 +292,56 @@ function timeAgo(d) {
   if (mins < 1440) return `${Math.floor(mins / 60)}小时前`
   if (mins < 10080) return `${Math.floor(mins / 1440)}天前`
   return new Date(d).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
+}
+
+function getLastMessagePreview(conv) {
+  // 后端返回的 lastMessage 可能是字符串或对象
+  if (!conv.lastMessage) {
+    return '发起了聊天'
+  }
+
+  // 如果是字符串，直接返回
+  if (typeof conv.lastMessage === 'string') {
+    return conv.lastMessage
+  }
+
+  // 如果是对象，取 content 属性
+  if (typeof conv.lastMessage === 'object' && conv.lastMessage.content) {
+    return conv.lastMessage.content
+  }
+
+  return '发起了聊天'
+}
+
+// 批量检查在线状态
+async function batchCheckOnlineStatus() {
+  if (!chat.conversations || chat.conversations.length === 0) return
+
+  try {
+    // 收集所有对方用户的 ID
+    const userIds = chat.conversations
+      .map(conv => conv.otherUser?.id)
+      .filter(id => id != null)
+
+    if (userIds.length === 0) return
+
+    console.log('[ConversationsPage] 批量检查在线状态:', userIds)
+
+    // 调用批量检查接口
+    const result = await api.batchCheckOnline(userIds)
+    console.log('[ConversationsPage] 在线状态结果:', result)
+
+    // 更新在线状态映射
+    onlineStatusMap.value = result || {}
+  } catch (error) {
+    console.error('[ConversationsPage] 检查在线状态失败:', error)
+  }
+}
+
+// 获取指定用户的在线状态
+function getOnlineStatus(userId) {
+  if (!userId) return false
+  return onlineStatusMap.value[userId] === true
 }
 
 function handleNotificationClick(item) {
@@ -476,6 +558,28 @@ async function loadMore() {
 .avatar-wrapper {
   position: relative;
   flex-shrink: 0;
+}
+
+.online-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  background: #10b981;
+  border: 2.5px solid var(--surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
+  animation: pulseOnline 2s ease-in-out infinite;
+}
+
+@keyframes pulseOnline {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+  }
 }
 
 .unread-badge {

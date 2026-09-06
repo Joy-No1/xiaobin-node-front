@@ -271,3 +271,12 @@ export function getOnlineCount() {
 export function getUserConnections(userId) {
   return api.get(`/online/connections/${userId}`).then(r => r.data.data)
 }
+
+// ==================== Region ====================
+export function getProvinces() {
+  return api.get('/region').then(r => r.data.data)
+}
+
+export function getRegionChildren(parentCode) {
+  return api.get('/region/children', { params: { parentCode } }).then(r => r.data.data)
+}

@@ -15,6 +15,17 @@ export const useAuthStore = defineStore('auth', () => {
     const result = await loginApi({ account, password })
     token.value = result.token
     user.value = result.user
+
+    // 提取 location 信息（如果用户对象中包含省市区）
+    if (result.user?.province || result.user?.city || result.user?.district) {
+      location.value = {
+        province: result.user.province || null,
+        city: result.user.city || null,
+        district: result.user.district || null
+      }
+      localStorage.setItem('location', JSON.stringify(location.value))
+    }
+
     localStorage.setItem('token', result.token)
     localStorage.setItem('user', JSON.stringify(result.user))
     wsConnect()
@@ -24,6 +35,17 @@ export const useAuthStore = defineStore('auth', () => {
     const result = await registerApi({ phone, password, nickname })
     token.value = result.token
     user.value = result.user
+
+    // 提取 location 信息（如果用户对象中包含省市区）
+    if (result.user?.province || result.user?.city || result.user?.district) {
+      location.value = {
+        province: result.user.province || null,
+        city: result.user.city || null,
+        district: result.user.district || null
+      }
+      localStorage.setItem('location', JSON.stringify(location.value))
+    }
+
     localStorage.setItem('token', result.token)
     localStorage.setItem('user', JSON.stringify(result.user))
     wsConnect()

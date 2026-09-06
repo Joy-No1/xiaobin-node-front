@@ -2,13 +2,13 @@
   --primary: hsla(296, 35%, 10%, 0.76);
   --primary-light: #897076;
   --secondary: #FFB347;
-  --bg: #F8F9FA;
-  --surface: #FFFFFF;
+  --bg: #F5F6F8;
+  --surface: #FAFBFC;
   --error: #E74C3C;
   --success: #2ECC71;
   --text: #2C3E50;
   --text-secondary: #95A5A6;
-  --divider: #ECF0F1;
+  --divider: #E8EAED;
   --shadow: rgba(0,0,0,0.08);
   --radius: 12px;
   --radius-lg: 20px;
