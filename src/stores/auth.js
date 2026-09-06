@@ -2,19 +2,23 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { login as loginApi, register as registerApi, getMyProfile } from '../services/api'
 import { connect as wsConnect, disconnect as wsDisconnect } from '../services/websocket'
+import { getDeviceInfo } from '../utils/deviceInfo'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
   const location = ref(JSON.parse(localStorage.getItem('location') || 'null'))
   const token = ref(localStorage.getItem('token') || '')
+  const devices = ref([])
 
   const isLoggedIn = () => !!token.value
   const isAuthenticated = computed(() => !!token.value && !!user.value)
 
   async function login(account, password) {
-    const result = await loginApi({ account, password })
+    const deviceInfo = getDeviceInfo()
+    const result = await loginApi({ account, password, deviceInfo })
     token.value = result.token
     user.value = result.user
+    devices.value = result.devices || []
 
     // 提取 location 信息（如果用户对象中包含省市区）
     if (result.user?.province || result.user?.city || result.user?.district) {

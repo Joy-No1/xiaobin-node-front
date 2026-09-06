@@ -280,3 +280,37 @@ export function getProvinces() {
 export function getRegionChildren(parentCode) {
   return api.get('/region/children', { params: { parentCode } }).then(r => r.data.data)
 }
+
+// ==================== Device Management ====================
+export function getDevices(currentDeviceId) {
+  return api.get('/users/me/devices', { params: { currentDeviceId } }).then(r => r.data.data)
+}
+
+export function deleteDevice(deviceId) {
+  return api.delete(`/users/me/devices/${deviceId}`)
+}
+
+export function updateDeviceStatus(deviceId, status) {
+  return api.put(`/users/me/devices/${deviceId}/status`, null, { params: { status } })
+}
+
+// ==================== Account Security ====================
+export function changePassword(oldPassword, newPassword) {
+  return api.put('/users/me/password', { oldPassword, newPassword })
+}
+
+export function changePhone(newPhone, verifyCode, password) {
+  return api.put('/users/me/phone', { newPhone, verifyCode, password })
+}
+
+export function getRealNameStatus() {
+  return api.get('/users/me/real-name').then(r => r.data.data)
+}
+
+export function submitRealName(realName, idCard) {
+  return api.post('/users/me/real-name', { realName, idCard })
+}
+
+export function deleteAccount(password) {
+  return api.delete('/users/me', { data: { password } })
+}

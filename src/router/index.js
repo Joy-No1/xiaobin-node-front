@@ -87,6 +87,34 @@ const routes = [
         path: 'profile/:userId',
         component: () => import('../views/profile/UserProfilePage.vue'),
         props: route => ({ userId: Number(route.params.userId) })
+      },
+      {
+        path: 'settings',
+        component: () => import('../views/settings/SettingsPage.vue')
+      },
+      {
+        path: 'settings/change-password',
+        component: () => import('../views/settings/ChangePasswordPage.vue')
+      },
+      {
+        path: 'settings/change-phone',
+        component: () => import('../views/settings/ChangePhonePage.vue')
+      },
+      {
+        path: 'settings/real-name',
+        component: () => import('../views/settings/RealNamePage.vue')
+      },
+      {
+        path: 'settings/devices',
+        component: () => import('../views/settings/DevicesPage.vue')
+      },
+      {
+        path: 'settings/storage',
+        component: () => import('../views/settings/StoragePage.vue')
+      },
+      {
+        path: 'settings/about',
+        component: () => import('../views/settings/AboutPage.vue')
       }
     ]
   }

@@ -71,6 +71,10 @@
         <span><UserCircle :size="18" class="menu-icon" /> 个人信息</span>
         <span class="arrow">›</span>
       </div>
+      <div class="simple-menu" @click="$router.push('/settings')">
+        <span><Settings :size="18" class="menu-icon" /> 设置</span>
+        <span class="arrow">›</span>
+      </div>
     </div>
 
     <!-- 退出登录 -->
