@@ -15,6 +15,10 @@ const routes = [
     component: () => import('../views/auth/RegisterPage.vue')
   },
   {
+    path: '/register/email',
+    component: () => import('../views/auth/RegisterEmailPage.vue')
+  },
+  {
     path: '/',
     component: () => import('../views/main/MainShell.vue'),
     children: [
@@ -99,6 +103,10 @@ const routes = [
       {
         path: 'settings/change-phone',
         component: () => import('../views/settings/ChangePhonePage.vue')
+      },
+      {
+        path: 'settings/change-email',
+        component: () => import('../views/settings/ChangeEmailPage.vue')
       },
       {
         path: 'settings/real-name',

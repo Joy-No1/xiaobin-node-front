@@ -1,27 +1,26 @@
 <template>
-  <div class="page change-phone-page">
+  <div class="page change-email-page">
     <div class="page-header flex-between">
       <button class="btn btn-sm" @click="$router.back()">← 返回</button>
-      <h1>更换手机号</h1>
+      <h1>更换邮箱</h1>
       <div style="width: 60px"></div>
     </div>
 
     <div class="page-body">
-      <div class="current-phone-card">
-        <div class="label">当前手机号</div>
-        <div class="phone-number">{{ maskedPhone }}</div>
+      <div class="current-email-card">
+        <div class="label">当前邮箱</div>
+        <div class="email-address">{{ currentEmail || '未设置' }}</div>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="phone-form">
+      <form @submit.prevent="handleSubmit" class="email-form">
         <div class="form-card">
           <div class="form-group">
-            <label class="form-label">新手机号</label>
+            <label class="form-label">新邮箱</label>
             <input
-              v-model="form.newPhone"
-              type="tel"
+              v-model="form.newEmail"
+              type="email"
               class="form-input"
-              placeholder="请输入新手机号"
-              maxlength="11"
+              placeholder="请输入新邮箱地址"
               required
             />
           </div>
@@ -32,7 +31,7 @@
                 v-model="form.verifyCode"
                 type="text"
                 class="form-input"
-                placeholder="请输入邮箱验证码"
+                placeholder="请输入验证码"
                 maxlength="6"
                 required
               />
@@ -45,7 +44,6 @@
                 {{ countdown > 0 ? `${countdown}秒后重试` : (sending ? '发送中...' : '获取验证码') }}
               </button>
             </div>
-            <div class="form-hint">验证码将发送到您的邮箱：{{ maskedEmail }}</div>
           </div>
           <div class="form-group">
             <label class="form-label">密码</label>
@@ -80,44 +78,33 @@ const submitting = ref(false)
 const sending = ref(false)
 const countdown = ref(0)
 const form = ref({
-  newPhone: '',
+  newEmail: '',
   verifyCode: '',
   password: ''
 })
 
-const maskedPhone = computed(() => {
-  const phone = auth.user?.phone || ''
-  if (phone.length === 11) {
-    return phone.substring(0, 3) + '****' + phone.substring(7)
-  }
-  return phone
-})
+const currentEmail = computed(() => auth.user?.email || '')
 
-const maskedEmail = computed(() => {
-  const email = auth.user?.email || ''
-  if (!email) return '未设置邮箱'
-  const atIndex = email.indexOf('@')
-  if (atIndex > 2) {
-    return email.substring(0, 2) + '***' + email.substring(atIndex)
-  }
-  return email
-})
+function validateEmail(email) {
+  const reg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return reg.test(email)
+}
 
 async function sendVerifyCode() {
-  if (!form.value.newPhone || form.value.newPhone.length !== 11) {
-    toast.error('请输入正确的手机号')
+  if (!form.value.newEmail) {
+    toast.error('请输入新邮箱地址')
     return
   }
 
-  if (!auth.user?.email) {
-    toast.error('您还未设置邮箱，无法接收验证码')
+  if (!validateEmail(form.value.newEmail)) {
+    toast.error('请输入正确的邮箱地址')
     return
   }
 
   sending.value = true
   try {
-    await api.sendEmailVerifyCode(auth.user.email, 'CHANGE_PHONE')
-    toast.success('验证码已发送到您的邮箱，请查收')
+    await api.sendEmailVerifyCode(form.value.newEmail, 'CHANGE_EMAIL')
+    toast.success('验证码已发送到新邮箱，请查收')
 
     // 开始倒计时
     countdown.value = 60
@@ -135,8 +122,8 @@ async function sendVerifyCode() {
 }
 
 async function handleSubmit() {
-  if (!form.value.newPhone || form.value.newPhone.length !== 11) {
-    toast.error('请输入正确的手机号')
+  if (!validateEmail(form.value.newEmail)) {
+    toast.error('请输入正确的邮箱地址')
     return
   }
 
@@ -147,11 +134,11 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    await api.changePhone(form.value.newPhone, form.value.verifyCode, form.value.password)
-    toast.success('手机号更换成功')
+    await api.changeEmail(form.value.newEmail, form.value.verifyCode, form.value.password)
+    toast.success('邮箱更换成功')
 
     // 更新用户信息
-    const updatedUser = { ...auth.user, phone: form.value.newPhone }
+    const updatedUser = { ...auth.user, email: form.value.newEmail }
     auth.updateUser({ user: updatedUser })
 
     setTimeout(() => {
@@ -166,17 +153,17 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.change-phone-page {
+.change-email-page {
   background: #F5F6F8;
   min-height: 100vh;
 }
 
-.change-phone-page .page-body {
+.change-email-page .page-body {
   background: transparent;
   padding: 16px;
 }
 
-.current-phone-card {
+.current-email-card {
   background: #fff;
   border-radius: 12px;
   padding: 20px;
@@ -190,13 +177,14 @@ async function handleSubmit() {
   margin-bottom: 8px;
 }
 
-.phone-number {
-  font-size: 20px;
+.email-address {
+  font-size: 18px;
   font-weight: 600;
   color: #333;
+  word-break: break-all;
 }
 
-.phone-form {
+.email-form {
   max-width: 500px;
   margin: 0 auto;
 }
@@ -250,11 +238,6 @@ async function handleSubmit() {
 .verify-code-wrapper .btn {
   flex-shrink: 0;
   white-space: nowrap;
-}
-
-.form-hint {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #999;
+  min-width: 110px;
 }
 </style>

@@ -35,6 +35,10 @@ export function register(data) {
   return api.post('/auth/register', data).then(r => r.data.data)
 }
 
+export function registerByEmail(email, verifyCode, password, nickname) {
+  return api.post('/auth/register/email', { email, verifyCode, password, nickname }).then(r => r.data.data)
+}
+
 export function login(data) {
   return api.post('/auth/login', data).then(r => r.data.data)
 }
@@ -303,6 +307,10 @@ export function changePhone(newPhone, verifyCode, password) {
   return api.put('/users/me/phone', { newPhone, verifyCode, password })
 }
 
+export function changeEmail(newEmail, verifyCode, password) {
+  return api.put('/users/me/email', { newEmail, verifyCode, password })
+}
+
 export function getRealNameStatus() {
   return api.get('/users/me/real-name').then(r => r.data.data)
 }
@@ -313,4 +321,9 @@ export function submitRealName(realName, idCard) {
 
 export function deleteAccount(password) {
   return api.delete('/users/me', { data: { password } })
+}
+
+// ==================== Email Verification ====================
+export function sendEmailVerifyCode(email, purpose) {
+  return api.post('/email/verify-code', { email, purpose })
 }

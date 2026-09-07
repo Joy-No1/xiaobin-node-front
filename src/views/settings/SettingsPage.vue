@@ -19,6 +19,10 @@
             <span>更换手机号</span>
             <span class="arrow">›</span>
           </div>
+          <div class="settings-item" @click="$router.push('/settings/change-email')">
+            <span>更换邮箱</span>
+            <span class="arrow">›</span>
+          </div>
           <div class="settings-item" @click="$router.push('/settings/real-name')">
             <span>实名认证</span>
             <span class="arrow">›</span>

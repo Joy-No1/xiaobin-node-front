@@ -24,6 +24,8 @@
         </button>
       </form>
       <p class="text-center mt-2">
+        <router-link to="/register/email" class="text-primary">使用邮箱注册</router-link>
+        <span class="mx-2">|</span>
         <router-link to="/login" class="text-primary">已有账号？去登录</router-link>
       </p>
     </div>
